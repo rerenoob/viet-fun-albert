@@ -867,6 +867,61 @@ function updateXPBar() {
 // =========================================================
 // SPEECH SYNTHESIS
 // =========================================================
+// Voice management for Vietnamese pronunciation
+let voicesLoaded = false;
+let viVoice = null;
+
+// Load and find Vietnamese voice
+function loadVoices() {
+  if (!window.speechSynthesis) return;
+  
+  const voices = speechSynthesis.getVoices();
+  viVoice = voices.find(v => v.lang.startsWith('vi'));
+  
+  if (viVoice) {
+    console.log("Found Vietnamese voice:", viVoice.name, viVoice.lang);
+  } else {
+    console.warn("No Vietnamese voice found. Available voices:");
+    voices.forEach(v => console.log(`  ${v.name} (${v.lang})`));
+  }
+  
+  voicesLoaded = true;
+}
+
+// Initialize voices
+if (window.speechSynthesis) {
+  speechSynthesis.onvoiceschanged = loadVoices;
+  // Also try loading immediately in case voices are already loaded
+  setTimeout(loadVoices, 100);
+}
+
+// Diagnostic function for Albert to run in console
+window.checkVoices = function() {
+  if (!window.speechSynthesis) {
+    console.log("Speech synthesis not supported in this browser");
+    return;
+  }
+  
+  const voices = speechSynthesis.getVoices();
+  console.log("=== VOICE DIAGNOSTIC ===");
+  console.log(`Total voices: ${voices.length}`);
+  console.log("Vietnamese voices:");
+  const viVoices = voices.filter(v => v.lang.startsWith('vi'));
+  if (viVoices.length === 0) {
+    console.log("  ❌ No Vietnamese voices found");
+  } else {
+    viVoices.forEach(v => console.log(`  ✅ ${v.name} (${v.lang}) - ${v.localService ? 'local' : 'remote'}`));
+  }
+  
+  console.log("\nAll available voices:");
+  voices.forEach(v => console.log(`  ${v.name} (${v.lang}) - ${v.localService ? 'local' : 'remote'}`));
+  
+  console.log("\nTo install Vietnamese voice:");
+  console.log("Windows: Settings > Time & Language > Language > Add language > Vietnamese");
+  console.log("macOS: System Settings > Accessibility > Spoken Content > System Voice > Manage Voices > Add Vietnamese");
+  console.log("iOS/Android: Install Vietnamese language pack in system settings");
+};
+
 function speak(text) {
   if (!window.speechSynthesis) return;
   try {
@@ -874,8 +929,19 @@ function speak(text) {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'vi-VN';
     u.rate = 0.8;
+    
+    // Try to use Vietnamese voice if available
+    if (viVoice) {
+      u.voice = viVoice;
+    } else if (voicesLoaded) {
+      // Voices loaded but no Vietnamese voice found
+      console.warn("No Vietnamese voice available, using default");
+    }
+    
     speechSynthesis.speak(u);
-  } catch(e) {}
+  } catch(e) {
+    console.error("Speech synthesis error:", e);
+  }
 }
 
 function speakCurrentFC() {
