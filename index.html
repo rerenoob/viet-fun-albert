@@ -893,6 +893,8 @@ if (window.speechSynthesis) {
   speechSynthesis.onvoiceschanged = loadVoices;
   // Also try loading immediately in case voices are already loaded
   setTimeout(loadVoices, 100);
+  // iOS Safari may need multiple attempts
+  setTimeout(loadVoices, 1000);
 }
 
 // Diagnostic function for Albert to run in console
@@ -919,7 +921,15 @@ window.checkVoices = function() {
   console.log("\nTo install Vietnamese voice:");
   console.log("Windows: Settings > Time & Language > Language > Add language > Vietnamese");
   console.log("macOS: System Settings > Accessibility > Spoken Content > System Voice > Manage Voices > Add Vietnamese");
-  console.log("iOS/Android: Install Vietnamese language pack in system settings");
+  console.log("iOS: Settings > Accessibility > Spoken Content > Voices > Add Vietnamese (Siri or Enhanced quality)");
+  console.log("Android: Settings > Language & input > Text-to-speech output > Install voice data > Vietnamese");
+  
+  // iOS-specific notes
+  console.log("\n⚠️ iOS/Safari Notes:");
+  console.log("- Safari on iOS may have limited Web Speech API support");
+  console.log("- Voices might only load after user interaction (tap to speak)");
+  console.log("- Try tapping a word first, then run checkVoices() again");
+  console.log("- If still no voices, try Chrome or Firefox on iOS");
 };
 
 function speak(text) {
@@ -938,9 +948,12 @@ function speak(text) {
       console.warn("No Vietnamese voice available, using default");
     }
     
+    // iOS Safari may require this to be inside a user gesture
     speechSynthesis.speak(u);
   } catch(e) {
     console.error("Speech synthesis error:", e);
+    // iOS Safari might block speech without user interaction
+    console.log("Note: On iOS Safari, speech may require a tap gesture first");
   }
 }
 
