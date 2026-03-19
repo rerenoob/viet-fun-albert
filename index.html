@@ -511,6 +511,20 @@
     .mt-16 { margin-top: 16px; }
     .mt-8 { margin-top: 8px; }
     .flex-center { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+    /* ---- SPEAK BUTTON ---- */
+    .speak-btn {
+      background: rgba(93,236,245,0.15);
+      border: 2px solid var(--diamond);
+      color: var(--diamond);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 4px 10px;
+      margin-top: 8px;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .speak-btn:hover { background: rgba(93,236,245,0.35); }
   </style>
 </head>
 <body>
@@ -540,6 +554,7 @@
 <div id="home-screen" class="screen active">
   <h1 class="home-title">Albert's<br>Vietnamese Quest</h1>
   <p class="home-subtitle">Learn Vietnamese the Minecraft way! ⚔️</p>
+  <p style="font-size:8px;color:var(--gold);margin-bottom:8px;">🔊 Tap any Vietnamese word to hear it!</p>
   <div class="game-grid">
     <button class="game-btn" onclick="showScreen('flashcard-screen'); initFlashcards()">
       <span class="btn-icon">📦</span>
@@ -584,11 +599,13 @@
         <div class="card-face card-front">
           <div class="card-emoji" id="fc-front-emoji">📦</div>
           <div class="card-hint">Tap to open!</div>
+          <button class="speak-btn" onclick="event.stopPropagation(); speakCurrentFC()">🔊 Hear it</button>
         </div>
         <div class="card-face card-back">
           <div class="card-emoji" id="fc-back-emoji">⭐</div>
           <div class="card-viet" id="fc-viet">từ</div>
           <div class="card-eng" id="fc-eng">word</div>
+          <button class="speak-btn" onclick="event.stopPropagation(); speakCurrentFC()">🔊 Hear it</button>
         </div>
       </div>
     </div>
@@ -848,6 +865,25 @@ function updateXPBar() {
 }
 
 // =========================================================
+// SPEECH SYNTHESIS
+// =========================================================
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'vi-VN';
+    u.rate = 0.8;
+    speechSynthesis.speak(u);
+  } catch(e) {}
+}
+
+function speakCurrentFC() {
+  const items = CATEGORIES[fcCategory].items;
+  speak(items[fcIndex].viet);
+}
+
+// =========================================================
 // AUDIO
 // =========================================================
 let audioCtx = null;
@@ -1083,6 +1119,8 @@ function renderMatchCol(containerId, items, field, side) {
 function handleMatchClick(btn, side) {
   if (btn.classList.contains('matched')) return;
 
+  if (side === 'right') speak(btn.dataset.key);
+
   if (side === 'left') {
     document.querySelectorAll('#match-left .match-item').forEach(b => b.classList.remove('selected'));
     matchLeftSel = btn;
@@ -1191,6 +1229,8 @@ function handleQuestAnswer(btn, chosen, correct) {
     if (b.textContent === correct) b.classList.add('correct');
   });
 
+  speak(correct);
+
   if (chosen === correct) {
     btn.classList.add('correct');
     soundCorrect();
@@ -1250,6 +1290,7 @@ function initToneExplorer() {
       '<div class="tone-desc">' + tone.desc + '</div>' +
       '<div class="tone-play-hint">▶ Tap to hear!</div>';
     card.onclick = () => {
+      speak(tone.syllable);
       playVietnamTone(i);
       card.classList.add('playing');
       setTimeout(() => card.classList.remove('playing'), 900);
