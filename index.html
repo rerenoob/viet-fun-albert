@@ -942,7 +942,11 @@ function loadVoices() {
   if (!window.speechSynthesis) return;
   
   const voices = speechSynthesis.getVoices();
-  viVoice = voices.find(v => v.lang.startsWith('vi'));
+  // Prioritize Northern (Hà Nội) Vietnamese voice
+  viVoice = voices.find(v => v.lang.startsWith('vi') && /hà nội|hanoi|northern|bắc/i.test(v.name));
+  if (!viVoice) {
+    viVoice = voices.find(v => v.lang.startsWith('vi'));
+  }
   
   if (viVoice) {
     console.log("Found Vietnamese voice:", viVoice.name, viVoice.lang);
@@ -987,8 +991,8 @@ window.checkVoices = function() {
   console.log("\nTo install Vietnamese voice:");
   console.log("Windows: Settings > Time & Language > Language > Add language > Vietnamese");
   console.log("macOS: System Settings > Accessibility > Spoken Content > System Voice > Manage Voices > Add Vietnamese");
-  console.log("iOS: Settings > Accessibility > Spoken Content > Voices > Add Vietnamese (Siri or Enhanced quality)");
-  console.log("Android: Settings > Language & input > Text-to-speech output > Install voice data > Vietnamese");
+  console.log("iOS: Settings > Accessibility > Spoken Content > Voices > Add Vietnamese (chọn giọng Bắc - Hà Nội nếu có)");
+  console.log("Android: Settings > Language & input > Text-to-speech > Install voice data > Vietnamese (chọn giọng Bắc nếu có)");
   
   // iOS-specific notes
   console.log("\n⚠️ iOS/Safari Notes:");
@@ -1003,15 +1007,14 @@ function speak(text) {
   try {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
+    // Giọng Bắc (Hà Nội)
     u.lang = 'vi-VN';
     u.rate = 0.8;
     
-    // Try to use Vietnamese voice if available
     if (viVoice) {
       u.voice = viVoice;
     } else if (voicesLoaded) {
-      // Voices loaded but no Vietnamese voice found
-      console.warn("No Vietnamese voice available, using default");
+      console.warn("Không tìm thấy giọng Việt, dùng mặc định");
     }
     
     // iOS Safari may require this to be inside a user gesture
